@@ -1,0 +1,5 @@
+2025-06-26 15:03:15,320 - INFO     - run_edge.py:<module>:14                  - Starting the [EDGE] MQTT client
+2025-06-26 15:03:15,609 - DEBUG    - model_manager.py:load_model:67           - Loading model from path: test_model/test_model.h5
+2025-06-26 15:03:15,619 - ERROR    - model_manager.py:load_model:74           - Failed to load model: Error when deserializing class 'DepthwiseConv2D' using config={'name': 'expanded_conv_depthwise', 'trainable': True, 'dtype': 'float32', 'kernel_size': [3, 3], 'strides': [1, 1], 'padding': 'same', 'data_format': 'channels_last', 'dilation_rate': [1, 1], 'groups': 1, 'activation': 'linear', 'use_bias': False, 'bias_initializer': {'class_name': 'Zeros', 'config': {}}, 'bias_regularizer': None, 'activity_regularizer': None, 'bias_constraint': None, 'depth_multiplier': 1, 'depthwise_initializer': {'class_name': 'GlorotUniform', 'config': {'seed': None}}, 'depthwise_regularizer': None, 'depthwise_constraint': None}.
+
+Exception encountered: Unrecognized keyword arguments passed to DepthwiseConv2D: {'groups': 1}
