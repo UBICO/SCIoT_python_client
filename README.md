@@ -1,6 +1,30 @@
 # SCIoT project
 *Copy of the SCIoT  project to work on the python clients*
 
+Questa è una copia del progetto per testare l'implementazione dei client python:
+
+13/07/2025
+creato lo script server_client_light/client/http_client.py -> clone del codice per esp32
+Punti da risolvere:
+    - attualmente il best offloading layer viene scelto in modo random per simulare condizioni in cui le performance della rete degradano -> capire come fare.
+    - Inserire codice su server per salvare su file i tempi di inferenza. 
+
+Come lanciare:
+    1. Seguire istruzioni scritte da Mattia per l'avvio del server (eventualmente inserire tensorflow per macos nel file config) 
+    2. All'avvio di run_edge.py -> premere CTRL + C per terminare la modalità websocket e far partire la modalità http
+    3. Avviare il client:
+       ```sh
+       python server_client_light/client/http_client.py
+       ```
+
+        
+
+
+
+
+
+===========================================================================================================================================
+
 The Split Computing on IoT (SCIoT) project provides tools to use Edge Impulse models in ESP32 devices, using split computing techniques.
 
 ![Unit Tests](https://github.com/UBICO/SCIoT/actions/workflows/codecov.yml/badge.svg) [![Coverage](https://codecov.io/github/UBICO/SCIoT//coverage.svg?branch=main)](https://codecov.io/gh/UBICO/SCIoT) [![Powered by UBICO](https://img.shields.io/badge/powered%20by-UBICO-orange.svg?style=flat&colorA=E1523D&colorB=007D8A)]()  
