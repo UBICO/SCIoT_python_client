@@ -1,27 +1,25 @@
 # SCIoT project
 *Copy of the SCIoT  project to work on the python clients*
 
-Questa è una copia del progetto per testare l'implementazione dei client python:
+Questa è una copia del progetto per testare l'implementazione dei client Python.
 
-13/07/2025
-creato lo script server_client_light/client/http_client.py -> clone del codice per esp32
-Punti da risolvere:
-    - attualmente il best offloading layer viene scelto in modo random per simulare condizioni in cui le performance della rete degradano -> capire come fare.
-    - Inserire codice su server per salvare su file i tempi di inferenza. 
+## 13/07/2025
 
-Come lanciare:
-    1. Seguire istruzioni scritte da Mattia per l'avvio del server (eventualmente inserire tensorflow per macos nel file config) 
-    2. All'avvio di run_edge.py -> premere CTRL + C per terminare la modalità websocket e far partire la modalità http
-    3. Avviare il client:
-       ```sh
-       python server_client_light/client/http_client.py
-       ```
+Creato lo script `server_client_light/client/http_client.py` (clone del codice per ESP32)
 
-        
+### 🔧 Punti da risolvere
+- Attualmente il best offloading layer viene scelto in modo random per simulare condizioni in cui le performance della rete degradano → **capire come fare.**
+- Inserire codice su server per **salvare su file i tempi di inferenza**
 
+### 🚀 Come lanciare
 
+1. Seguire le istruzioni scritte da Mattia per l'avvio del server (eventualmente inserire `tensorflow` per macOS nel file `config`)
+2. All'avvio di `run_edge.py`, premere `CTRL + C` per terminare la modalità websocket e far partire la modalità HTTP
+3. Avviare il client:
 
-
+   ```sh
+   python server_client_light/client/http_client.py
+   ```
 
 ===========================================================================================================================================
 
