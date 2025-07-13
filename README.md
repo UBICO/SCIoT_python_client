@@ -7,11 +7,11 @@ Questa è una copia del progetto per testare l'implementazione dei client Python
 
 Creato lo script `server_client_light/client/http_client.py` (clone del codice per ESP32)
 
-### 🔧 Punti da risolvere
+### Punti da risolvere
 - Attualmente il best offloading layer viene scelto in modo random per simulare condizioni in cui le performance della rete degradano → **capire come fare.**
 - Inserire codice su server per **salvare su file i tempi di inferenza**
 
-### 🚀 Come lanciare
+### Come lanciare
 
 1. Seguire le istruzioni scritte da Mattia per l'avvio del server (eventualmente inserire `tensorflow` per macOS nel file `config`)
 2. All'avvio di `run_edge.py`, premere `CTRL + C` per terminare la modalità websocket e far partire la modalità HTTP
