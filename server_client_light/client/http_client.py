@@ -56,7 +56,7 @@ def get_offloading_layer():
         return 58
 
 # TEST: Simulare cambio best offloading layer randomico
-def get_offloading_layer2():
+def get_offloading_layer_random():
     url = f"{SERVER}/api/offloading_layer"
     r = requests.get(url)
     if r.status_code == 200:
@@ -126,8 +126,8 @@ def main():
     register_device()
     while True:
         send_image()
-        #best_layer = get_offloading_layer() 
-        best_layer = get_offloading_layer2()
+        best_layer = get_offloading_layer() 
+        #best_layer = get_offloading_layer2()
         time.sleep(1)  # garantiamo che il server abbia elaborato
         message_id = generate_message_id()
         image = load_image_rgb("img.png")
