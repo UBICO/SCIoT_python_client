@@ -3,6 +3,22 @@
 
 Questa è una copia del progetto per testare l'implementazione dei client Python.
 
+## 05/11/2025
+
+### Updates:
+- Commentate le configurazione MQTT e WebSocket dal file settings.yaml in modo da eseguire solo la versione http. Non è quindi necessario fare il punto 2 della guida a come lanciare (premere `CTRL + C`) all'avvio. 
+- Aggiunta la cartella 'simulated_results' contenente lo script 'simulated_scenario.py' utilizzato per creare i file .csv dei risultati simulati.
+- il best offloading layer viene scelto correttamente, non più in modo randomico. 
+
+### Punti da risolvere:
+- Quando viene fatto l'offloading su certi layer va in errore. Credo che il problema sia dovuto al fatto che per alcuni layer l'edge si aspetta di ricevere un numero di pesi differente. 
+
+### Altre indicazioni: 
+- Per intervenire su la latency: message_data.py → get_latency()
+- Per intervenire su edge inference time: models/model_manager.py → wrapper()
+
+
+
 ## 13/07/2025
 
 Creato lo script `server_client_light/client/http_client.py` (clone del codice per ESP32)
