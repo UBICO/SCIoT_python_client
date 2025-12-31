@@ -17,7 +17,7 @@ DEVICE_ID = "device_01"
 TFLITE_DIR = SCRIPT_DIR / "tflite"
 IMAGE_PATH = SCRIPT_DIR / "img.png"
 
-# Funzione per generare un message ID randomico
+# Function to generate a random message ID
 def generate_message_id():
     return ''.join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=4))
 
@@ -28,11 +28,11 @@ def register_device():
     url = f"{SERVER}/api/registration"
     payload = {"device_id": DEVICE_ID}
     r = requests.post(url, json=payload)
-    print("Registrazione:", r.status_code, r.text)
+    print("Registration:", r.status_code, r.text)
 
-# ----------------------------------------------
-#  Convert image in RGB565 abd send to server
-# ----------------------------------------------
+# ------------------------------------------------
+#  Convert image to RGB565 and send to server
+# ------------------------------------------------
 def send_image():
     url = f"{SERVER}/api/device_input"
     img = Image.open(str(IMAGE_PATH)).resize((96, 96)).convert("RGB")
@@ -45,7 +45,7 @@ def send_image():
             rgb565.append(rgb)
     rgb565_bytes = struct.pack(f">{len(rgb565)}H", *rgb565)
     r = requests.post(url, data=rgb565_bytes, headers={"Content-Type": "application/octet-stream"})
-    print("Immagine inviata:", r.status_code)
+    print("Image sent:", r.status_code)
 
 # ----------------------------
 #  Request Best Offloading Layer
@@ -55,23 +55,23 @@ def get_offloading_layer():
     r = requests.get(url)
     if r.status_code == 200:
         best_layer = r.json().get("offloading_layer_index", 58)
-        print("Best layer ricevuto:", best_layer)
+        print("Best layer received:", best_layer)
         return best_layer
     else:
-        print("Errore richiesta layer:", r.status_code)
+        print("Error requesting layer:", r.status_code)
         return 58
 
-# TEST: Simulare cambio best offloading layer randomico
+# TEST: Simulate random best offloading layer change
 def get_offloading_layer_random():
     url = f"{SERVER}/api/offloading_layer"
     r = requests.get(url)
     if r.status_code == 200:
         best_layer = r.json().get("offloading_layer_index", 58)
-        print("Best layer ricevuto:", best_layer)
+        print("Best layer received:", best_layer)
         return random.randint(0, 58)
         #return best_layer
     else:
-        print("Errore richiesta layer:", r.status_code)
+        print("Error requesting layer:", r.status_code)
         return 58
 
 
@@ -101,7 +101,7 @@ def run_split_inference(image, tflite_dir, stop_layer):
         interpreter.invoke()
         t1 = time.time()
         inference_times.append(t1 - t0)
-        # Aumentare inference time con tempo random -> simulare un client più lento
+        # Increase inference time with random time -> simulate a slower client
         #t = ((t1-t0) + random.uniform(0,0.02))
         #inference_times.append(t)
         input_data = interpreter.get_tensor(output_details[0]['index'])
@@ -123,18 +123,18 @@ def send_inference_result(output_data, inference_times, layer_index, message_id)
     buffer += np.array(inference_times, dtype=np.float32).tobytes()
 
     r = requests.post(url, data=buffer, headers={"Content-Type": "application/octet-stream"})
-    print("Output inviato:", r.status_code)
+    print("Output sent:", r.status_code)
 
-# ---------------------
+# -----
 # MAIN
-# ---------------------
+# -----
 def main():
     register_device()
     while True:
         send_image()
         best_layer = get_offloading_layer() 
         #best_layer = get_offloading_layer2()
-        time.sleep(1)  # garantiamo che il server abbia elaborato
+        time.sleep(1)  # Ensure server has processed the request
         message_id = generate_message_id()
         image = load_image_rgb(IMAGE_PATH)
         output_data, inference_times = run_split_inference(image, TFLITE_DIR, best_layer)
