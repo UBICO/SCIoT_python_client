@@ -1,0 +1,17 @@
+# SCIoT WebSocket Client Configuration
+
+client:
+  device_id: "device_01"
+
+websocket:
+  server_host: "localhost"
+  server_port: 8080
+  endpoint: "/ws"
+
+ntp:
+  server: "pool.ntp.org"
+
+model:
+  input_height: 96
+  input_width: 96
+  image_name: "dog.png"

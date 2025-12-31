@@ -1,0 +1,19 @@
+# SCIoT Edge Server Configuration
+# Used by HTTP and WebSocket servers
+
+server:
+  http:
+    host: "0.0.0.0"
+    port: 8000
+    ntp_server: "0.it.pool.ntp.org"
+  
+  websocket:
+    host: "0.0.0.0"
+    port: 8080
+    ntp_server: "0.it.pool.ntp.org"
+
+model:
+  fomo_96x96:
+    input_height: 96
+    input_width: 96
+    last_offloading_layer: 58

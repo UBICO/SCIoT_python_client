@@ -13,16 +13,27 @@ import ntplib
 import websockets
 from PIL import Image
 import numpy as np
+import yaml
 from pathlib import Path
 
 # Get the directory where this script is located
 SCRIPT_DIR = Path(__file__).resolve().parent
+CONFIG_PATH = SCRIPT_DIR / "websocket_config.yaml"
 
-# --- Configuration ---
-NTP_SERVER = "pool.ntp.org"
-WS_URI = "ws://localhost:8080/ws"
-DEVICE_ID = "device_01"
-IMAGE_PATH = SCRIPT_DIR / "dog.png"
+# Load configuration from YAML file
+with open(CONFIG_PATH, "r") as f:
+    config = yaml.safe_load(f)
+
+DEVICE_ID = config["client"]["device_id"]
+NTP_SERVER = config["ntp"]["server"]
+
+WS_HOST = config["websocket"]["server_host"]
+WS_PORT = config["websocket"]["server_port"]
+WS_ENDPOINT = config["websocket"]["endpoint"]
+WS_URI = f"ws://{WS_HOST}:{WS_PORT}{WS_ENDPOINT}"
+
+MODEL_CONFIG = config["model"]
+IMAGE_PATH = SCRIPT_DIR / MODEL_CONFIG["image_name"]
 
 # Globals
 offset = 0.0
