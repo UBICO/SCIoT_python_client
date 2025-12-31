@@ -7,6 +7,7 @@ import time
 import random
 import os
 import yaml
+import uuid
 from pathlib import Path
 from delay_simulator import DelaySimulator
 
@@ -19,7 +20,15 @@ CONFIG_PATH = SCRIPT_DIR / "http_config.yaml"
 with open(CONFIG_PATH, "r") as f:
     config = yaml.safe_load(f)
 
-DEVICE_ID = config["client"]["device_id"]
+# Generate or load client ID
+client_id_config = config["client"].get("client_id")
+if client_id_config:
+    CLIENT_ID = str(client_id_config)
+else:
+    CLIENT_ID = str(uuid.uuid4())[:8]  # Generate random 8-char ID
+
+# Model will be assigned by server during registration
+MODEL_NAME = None  # Will be set after successful registration
 SERVER_HOST = config["http"]["server_host"]
 SERVER_PORT = config["http"]["server_port"]
 SERVER = f"http://{SERVER_HOST}:{SERVER_PORT}"
@@ -53,12 +62,19 @@ def generate_message_id():
 #  Registration
 # ---------------------
 def register_device():
+    global MODEL_NAME  # Will be set by server response
     url = f"{SERVER}{ENDPOINTS['registration']}"
-    payload = {"device_id": DEVICE_ID}
+    payload = {"client_id": CLIENT_ID}
     try:
         r = requests.post(url, json=payload, timeout=5)
         print("Registration:", r.status_code, r.text)
-        return True
+        if r.status_code == 200:
+            response_data = r.json()
+            # Server assigns the model
+            MODEL_NAME = response_data.get("model_name", "fomo_96x96")
+            print(f"✓ Server assigned model: {MODEL_NAME}")
+            return True
+        return False
     except requests.exceptions.RequestException as e:
         print(f"⚠ Registration failed (server unreachable): {e}")
         print("  → Continuing with local-only inference")
@@ -78,8 +94,11 @@ def send_image():
             rgb = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
             rgb565.append(rgb)
     rgb565_bytes = struct.pack(f">{len(rgb565)}H", *rgb565)
+    
+    # Include client_id in URL parameters
+    params = {"client_id": CLIENT_ID}
     try:
-        r = requests.post(url, data=rgb565_bytes, headers={"Content-Type": "application/octet-stream"}, timeout=5)
+        r = requests.post(url, data=rgb565_bytes, params=params, headers={"Content-Type": "application/octet-stream"}, timeout=5)
         print("Image sent:", r.status_code)
         return True
     except requests.exceptions.RequestException as e:
@@ -91,8 +110,9 @@ def send_image():
 # ----------------------------
 def get_offloading_layer():
     url = f"{SERVER}{ENDPOINTS['offloading_layer']}"
+    params = {"client_id": CLIENT_ID}
     try:
-        r = requests.get(url, timeout=5)
+        r = requests.get(url, params=params, timeout=5)
         if r.status_code == 200:
             best_layer = r.json().get("offloading_layer_index", LAST_OFFLOADING_LAYER)
             print("Best layer received:", best_layer)
@@ -175,7 +195,7 @@ def send_inference_result(output_data, inference_times, layer_index, message_id)
 
     buffer = bytearray()
     buffer += struct.pack("d", timestamp)
-    buffer += DEVICE_ID.encode("ascii").ljust(9, b'\x00')
+    buffer += CLIENT_ID.encode("ascii").ljust(9, b'\x00')
     buffer += message_id.encode("ascii").ljust(4, b'\x00')
     buffer += struct.pack("i", layer_index)
     buffer += struct.pack("I", output_data.nbytes)
@@ -199,14 +219,20 @@ def main():
     print("="*60)
     print("SCIoT Client Starting")
     print(f"Server: {SERVER}")
-    print(f"Device ID: {DEVICE_ID}")
+    print(f"Client ID: {CLIENT_ID}")
     print("="*60)
     
     # Try to register, but continue even if it fails
     server_available = register_device()
-    if not server_available:
+    if server_available:
+        print(f"✓ Connected to server (model: {MODEL_NAME})\n")
+    else:
         print("\n⚠ Server not available - Running in LOCAL-ONLY mode")
-        print("  Client will continue and retry server connection on each request\n")
+        print("  (Using fallback model configuration)\n")
+        # Use fallback model if server unavailable
+        if MODEL_NAME is None:
+            MODEL_NAME = "fomo_96x96"
+            print(f"  → Using fallback model: {MODEL_NAME}\n")
     
     while True:
         # Try to send image (optional, just for server tracking)

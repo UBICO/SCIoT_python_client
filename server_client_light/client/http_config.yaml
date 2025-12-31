@@ -1,7 +1,9 @@
 # SCIoT HTTP Client Configuration
 
 client:
-  device_id: "device_01"
+  # Optional: Set to fixed ID. If null/empty, a random ID is generated
+  # Model will be negotiated with server upon connection
+  client_id: null
   
 http:
   server_host: "0.0.0.0"

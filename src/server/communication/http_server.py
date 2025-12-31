@@ -25,6 +25,8 @@ class HttpServer:
         self.endpoints = endpoints
 
         self.devices = set()
+        # Map client_id -> model_name for multi-client support
+        self.client_models = {}
 
         # Set up model
         self.input_height = input_height
@@ -56,33 +58,61 @@ class HttpServer:
     def _get_current_time(self) -> float:
         return time.time() + self.offset
 
+    def _assign_model_to_client(self, client_id: str) -> str:
+        """
+        Assign a model to the connecting client.
+        
+        Current implementation: Assign default model
+        Future enhancements: 
+        - Load balancing across models
+        - Client-specific model selection
+        - Performance-based model assignment
+        """
+        # For now, assign the default model (can be made configurable)
+        return "fomo_96x96"
+
     def _setup_routes(self):
         @self.app.post(self.endpoints['registration'])
         async def registration(data: dict):
             try:
-                cleaned_device_id = self.request_handler.handle_registration(data["device_id"])
-                self.devices.add(cleaned_device_id)
-                return {'message': 'Success', 'device': cleaned_device_id}
+                client_id = data.get("client_id", "unknown")
+                
+                # Server assigns a model to this client
+                # For now, assign default model. Can be enhanced for load balancing, etc.
+                assigned_model = self._assign_model_to_client(client_id)
+                
+                # Register client and store model mapping
+                self.client_models[client_id] = assigned_model
+                self.devices.add(client_id)
+                
+                logger.info(f"Client registered: {client_id} (assigned model: {assigned_model})")
+                print(f"Client {client_id} registered, assigned model: {assigned_model}")
+                
+                return {
+                    'message': 'Success',
+                    'client_id': client_id,
+                    'model_name': assigned_model
+                }
             except Exception as e:
                 print(f"ERROR in registration endpoint: {type(e).__name__}: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post(self.endpoints['device_input'])
-        async def device_input(request: Request):
+        async def device_input(request: Request, client_id: str = None):
             try:
                 body = await request.body()  # Reads raw bytes
-                self.request_handler.handle_device_input(body, self.input_height, self.input_width)
+                self.request_handler.handle_device_input(body, self.input_height, self.input_width, client_id)
                 return {'message': 'Success'}
             except Exception as e:
                 print(f"ERROR in device_input endpoint: {type(e).__name__}: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post(self.endpoints['device_inference_result'])
-        async def device_inference_result(request: Request):
+        async def device_inference_result(request: Request, client_id: str = None):
             try:
                 received_timestamp = self._get_current_time()
                 body = await request.body()  # Reads raw bytes
-                self.best_offloading_layer = self.request_handler.handle_device_inference_result(body=body, received_timestamp=received_timestamp)
+                self.best_offloading_layer = self.request_handler.handle_device_inference_result(body=body, received_timestamp=received_timestamp, client_id=client_id)
                 return {'message': 'Success'}
             except Exception as e:
                 error_msg = f"ERROR in device_inference_result endpoint: {type(e).__name__}: {e}"
@@ -92,9 +122,9 @@ class HttpServer:
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.get(self.endpoints['offloading_layer'])
-        async def offloading_layer():
+        async def offloading_layer(client_id: str = None):
             try:
-                cleaned_offloading_layer_index = self.request_handler.handle_offloading_layer(best_offloading_layer=self.best_offloading_layer)
+                cleaned_offloading_layer_index = self.request_handler.handle_offloading_layer(best_offloading_layer=self.best_offloading_layer, client_id=client_id)
                 return {'offloading_layer_index': cleaned_offloading_layer_index}
             except Exception as e:
                 print(f"ERROR in offloading_layer endpoint: {type(e).__name__}: {e}")

@@ -38,6 +38,13 @@ The SCIoT project provides tools to use Edge Impulse models in ESP32 devices and
 - Continues operation when server unavailable
 - No crashes on network failures
 
+#### 🔗 Multi-Client Support
+- Multiple concurrent clients with unique IDs (auto-generated or configured)
+- Server negotiates and assigns models upon connection
+- Client doesn't need to declare model upfront
+- Per-client offloading decisions
+- Support for heterogeneous deployments
+
 #### 🧪 Comprehensive Testing
 - 44 automated tests (39 core + 5 MQTT)
 - Interactive demonstration scripts
@@ -238,6 +245,9 @@ pytest tests/test_variance_and_local_inference.py -v
 # Connection resilience
 pytest tests/test_client_resilience.py -v
 
+# Multi-client model negotiation
+pytest tests/test_multi_client.py -v
+
 # MQTT client
 pytest tests/test_mqtt_client/ -v
 ```
@@ -298,24 +308,36 @@ delay_simulation:
 
 See [DELAY_SIMULATION.md](DELAY_SIMULATION.md) for details.
 
-### Client Resilience
+### Multi-Client Support
 
-Clients handle server unavailability gracefully:
+Run multiple concurrent clients with automatic model negotiation:
 
-1. **Connection timeout:** 5 seconds on all requests
-2. **Fallback behavior:** Run all layers locally when server unreachable
-3. **No crashes:** All network errors caught and handled
-4. **Auto-retry:** Attempts reconnection on each request
-5. **Continues operation:** System never stops, even when isolated
+1. **Client Configuration**
+   - Only specify client ID (auto-generated or fixed)
+   - No model declaration needed in config
 
-Example output when server is down:
-```
-⚠ Registration failed (server unreachable): Connection refused
-  → Continuing with local-only inference
-⚠ Cannot reach server: Connection refused
-  → Running all layers locally
-✓ Inference complete (layers 0-58)
-```
+2. **Server Assignment**
+   - Server decides which model to assign
+   - Can load balance or assign based on capabilities
+
+3. **Example**: Run 3 clients simultaneously:
+   ```bash
+   # Terminal 1: Client A (auto-generated ID)
+   python server_client_light/client/http_client.py
+   # Server assigns: "fomo_96x96"
+   
+   # Terminal 2: Client B (fixed ID: device_01)
+   # Edit http_config.yaml: client_id: "device_01"
+   python server_client_light/client/http_client.py
+   # Server assigns: "fomo_96x96"
+   
+   # Terminal 3: Client C (fixed ID: mobile_02)
+   # Edit http_config.yaml: client_id: "mobile_02"
+   python server_client_light/client/http_client.py
+   # Server assigns: "fomo_96x96"
+   ```
+
+See [MULTI_CLIENT_ARCHITECTURE.md](MULTI_CLIENT_ARCHITECTURE.md) for detailed model negotiation and configuration.
 
 ## Documentation
 
@@ -327,6 +349,7 @@ Comprehensive documentation available:
 - **[LOCAL_INFERENCE_IMPLEMENTATION.md](LOCAL_INFERENCE_IMPLEMENTATION.md)** - Implementation details
 - **[CLIENT_SERVER_-1_SEMANTICS.md](CLIENT_SERVER_-1_SEMANTICS.md)** - How -1 works end-to-end
 - **[DELAY_SIMULATION.md](DELAY_SIMULATION.md)** - Delay simulation guide
+- **[MULTI_CLIENT_ARCHITECTURE.md](MULTI_CLIENT_ARCHITECTURE.md)** - Multi-client support and configuration
 - **[TEST_SUITE_SUMMARY.md](TEST_SUITE_SUMMARY.md)** - Complete test documentation
 
 ## System Architecture

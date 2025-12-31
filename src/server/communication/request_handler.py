@@ -84,14 +84,14 @@ class RequestHandler():
         
         return should_force
     
-    def handle_registration(self, device_id):
+    def handle_registration(self, client_id):
         # Apply network delay before responding
         if self.network_delay.enabled:
             delay = self.network_delay.apply_delay()
             logger.debug(f"Applied network delay: {delay*1000:.2f}ms")
-        return device_id
+        return client_id
 
-    def handle_device_input(self, rgb565_image, height, width):
+    def handle_device_input(self, rgb565_image, height, width, client_id=None):
         # Apply network delay after receiving input
         if self.network_delay.enabled:
             delay = self.network_delay.apply_delay()
@@ -102,9 +102,13 @@ class RequestHandler():
         image.save(InputDataFiles.input_data_file_path)
         return
     
-    def handle_device_inference_result(self, body, received_timestamp):
+    def handle_device_inference_result(self, body, received_timestamp, client_id=None):
         message_data = RequestHandler._from_raw('device_inference_result', body)
         message_data = RequestHandler._extend_message_data(message_data, received_timestamp, body)
+        
+        if client_id:
+            logger.debug(f"Processing inference result from client {client_id}")
+        
         with open(OffloadingDataFiles.data_file_path_device, 'r') as f:
             device_inference_times = json.load(f)
         
@@ -167,7 +171,9 @@ class RequestHandler():
         
         return best_offloading_layer
     
-    def handle_offloading_layer(self, best_offloading_layer):
+    def handle_offloading_layer(self, best_offloading_layer, client_id=None):
+        if client_id:
+            logger.debug(f"Offloading decision for client {client_id}: layer {best_offloading_layer}")
         return best_offloading_layer
 
     @staticmethod
