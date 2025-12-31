@@ -234,8 +234,14 @@ streamlit run src/server/web/webpage.py
 
 ### Run All Tests
 ```sh
-pytest tests/test_variance_and_local_inference.py tests/test_client_resilience.py tests/test_mqtt_client/ -v
+pytest tests/test_variance_and_local_inference.py tests/test_client_resilience.py tests/test_mqtt_client/ tests/test_multi_client.py -v
 ```
+
+**Test Coverage**: 67 tests passing
+- Variance & local inference: 27 tests
+- Client resilience: 12 tests  
+- MQTT client: 5 tests
+- Multi-client model negotiation: 23 tests
 
 ### Run Specific Test Suites
 ```sh
@@ -427,5 +433,5 @@ See [LICENSE](LICENSE) file for details.
 ---
 
 **Last Updated:** December 31, 2025  
-**Status:** ✅ All systems operational (44/44 tests passing)  
+**Status:** ✅ All systems operational (67/67 tests passing)  
 **Version:** Python 3.11.11, TensorFlow 2.15.0
