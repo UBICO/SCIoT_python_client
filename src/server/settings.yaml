@@ -31,20 +31,8 @@ communication:
 delay_simulation:
   computation:
     enabled: false
-    max: 0.002
-    mean: 0.001
-    min: 0.0005
-    std_dev: 0.0002
-    type: none
-    value: 0.001
   network:
     enabled: false
-    max: 0.015
-    mean: 0.01
-    min: 0.005
-    std_dev: 0.002
-    type: none
-    value: 0.01
 local_inference_mode:
   enabled: true
   probability: 0.01

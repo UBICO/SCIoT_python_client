@@ -1,0 +1,14 @@
+{
+  "name": "network_delay_50ms",
+  "computation_delay": {
+    "enabled": false
+  },
+  "network_delay": {
+    "enabled": true,
+    "type": "gaussian",
+    "mean": 0.05,
+    "std_dev": 0.01
+  },
+  "duration_seconds": 30,
+  "num_clients": 1
+}

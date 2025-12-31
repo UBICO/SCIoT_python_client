@@ -298,6 +298,43 @@ delay_simulation:
 
 See [DELAY_SIMULATION.md](DELAY_SIMULATION.md) for details.
 
+### Performance Simulation
+
+Run comprehensive multi-scenario simulations with automated analysis:
+
+```bash
+# Run all 9 predefined scenarios (duration: ~15 minutes)
+python simulation_runner.py
+
+# Results saved to: simulated_results/simulation_YYYYMMDD_HHMMSS/
+#   - baseline_inference_results.csv
+#   - network_delay_20ms_inference_results.csv
+#   - computation_delay_5ms_inference_results.csv
+#   - ... (one per scenario)
+```
+
+See [SIMULATION_RUNNER_README.md](SIMULATION_RUNNER_README.md) for scenarios and configuration.
+
+### Results Analysis
+
+Generate comprehensive graphs and statistics from simulation results:
+
+```bash
+# Analyze a simulation folder
+python analyze_simulation.py simulated_results/simulation_YYYYMMDD_HHMMSS
+
+# Generates in analysis/ subfolder:
+#   - Device vs Edge time comparison plots
+#   - Total inference time bar charts
+#   - Throughput analysis
+#   - Timing distribution boxplots
+#   - Layer statistics
+#   - Comprehensive comparison dashboard
+#   - Summary statistics CSV
+```
+
+See [ANALYSIS_README.md](ANALYSIS_README.md) for detailed output descriptions and interpretation.
+
 ### Client Resilience
 
 Clients handle server unavailability gracefully:

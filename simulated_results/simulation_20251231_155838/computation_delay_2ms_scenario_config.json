@@ -1,0 +1,14 @@
+{
+  "name": "computation_delay_2ms",
+  "computation_delay": {
+    "enabled": true,
+    "type": "gaussian",
+    "mean": 0.002,
+    "std_dev": 0.0005
+  },
+  "network_delay": {
+    "enabled": false
+  },
+  "duration_seconds": 30,
+  "num_clients": 1
+}

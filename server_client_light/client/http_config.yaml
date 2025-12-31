@@ -1,57 +1,29 @@
-# SCIoT HTTP Client Configuration
-
 client:
-  device_id: "device_01"
-  
+  client_id: null
+  device_id: device_01
+delay_simulation:
+  computation:
+    enabled: true
+    mean: 0.002
+    std_dev: 0.0005
+    type: gaussian
+  network:
+    enabled: false
 http:
-  server_host: "0.0.0.0"
-  server_port: 8000
   endpoints:
-    registration: "/api/registration"
-    device_input: "/api/device_input"
-    offloading_layer: "/api/offloading_layer"
-    device_inference_result: "/api/device_inference_result"
-
+    device_inference_result: /api/device_inference_result
+    device_input: /api/device_input
+    offloading_layer: /api/offloading_layer
+    registration: /api/registration
+  server_host: 0.0.0.0
+  server_port: 8000
+local_inference_mode:
+  enabled: true
+  probability: 0.1
 model:
+  image_name: img.png
   input_height: 96
   input_width: 96
   last_offloading_layer: 58
-  image_name: "img.png"
-  tflite_subdir: "tflite"
-  submodel_prefix: "submodel"
-
-# Artificial Delay Simulation (for testing/evaluation)
-delay_simulation:
-  # Computation delay (simulates slower device)
-  computation:
-    enabled: false
-    type: "static"  # Options: none, static, gaussian, uniform, exponential
-    # For static:
-    value: 0.02  # seconds (e.g., 0.002 = 2ms)
-    # For gaussian:
-    mean: 0.002   # seconds
-    std_dev: 0.005  # seconds
-    # For uniform:
-    min: 0.001    # seconds
-    max: 0.003    # seconds
-  
-  # Network delay (simulates slower network on client side)
-  network:
-    enabled: false
-    type: "none"  # Options: none, static, gaussian, uniform, exponential
-    # For static:
-    value: 0.020  # seconds (e.g., 0.020 = 20ms)
-    # For gaussian:
-    mean: 0.020   # seconds
-    std_dev: 0.005  # seconds
-    # For uniform:
-    min: 0.010    # seconds
-    max: 0.030    # seconds
-
-# Local Inference Mode (force device to run all layers locally for time refresh)
-local_inference_mode:
-  enabled: true
-  # Probability of forcing local inference on each request (0.0 - 1.0)
-  # 0.0 = never force local, 1.0 = always force local
-  # 0.1 = ~10% of requests run locally (useful for periodic re-testing)
-  probability: 0.1
+  submodel_prefix: submodel
+  tflite_subdir: tflite

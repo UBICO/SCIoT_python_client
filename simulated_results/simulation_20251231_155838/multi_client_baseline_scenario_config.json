@@ -1,0 +1,11 @@
+{
+  "name": "multi_client_baseline",
+  "computation_delay": {
+    "enabled": false
+  },
+  "network_delay": {
+    "enabled": false
+  },
+  "duration_seconds": 30,
+  "num_clients": 3
+}
