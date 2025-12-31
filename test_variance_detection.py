@@ -1,14 +1,103 @@
 #!/usr/bin/env python3
 """
-Demonstration of the variance detection system.
-Shows how the system detects inference time changes and triggers re-evaluation.
+Interactive demonstration of the variance detection system.
+For automated tests, see tests/test_variance_and_local_inference.py
+
+This script shows:
+- How variance is detected using Coefficient of Variation (CV)
+- How the system tracks stable vs unstable layers
+- How cascading propagates to next layer
+- When the offloading algorithm should be re-evaluated
 """
 
-from server.variance_detector import VarianceDetector, InferenceTimeHistory
-import statistics
+from server.variance_detector import VarianceDetector
 
 
-def demonstrate_variance_detection():
+def main():
+    """Run interactive variance detection demonstration"""
+    
+    print("=" * 80)
+    print("VARIANCE DETECTION SYSTEM - INTERACTIVE DEMO")
+    print("=" * 80)
+    
+    detector = VarianceDetector(window_size=10, variance_threshold=0.15)
+    
+    print("\n1. STABLE DEVICE LAYER")
+    print("-" * 80)
+    print("Simulating stable device measurements: 19µs ± 0.2µs\n")
+    
+    stable_times = [19.1e-6, 18.9e-6, 19.2e-6, 19.0e-6, 18.8e-6,
+                    19.1e-6, 19.0e-6, 19.2e-6, 18.9e-6, 19.1e-6]
+    
+    for i, time in enumerate(stable_times):
+        needs_retest = detector.add_device_measurement(0, time)
+        status = "🔴 VARIANCE" if needs_retest else "✓"
+        print(f"  Measurement {i+1:2d}: {time*1e6:.1f}µs {status}")
+    
+    stats = detector.device_histories[0].get_stats()
+    print(f"\n  Mean: {stats['mean']*1e6:.2f}µs")
+    print(f"  StDev: {stats['stdev']*1e6:.3f}µs")
+    print(f"  CV: {stats['cv']:.2%} (threshold: 15%)")
+    print(f"  Status: {'🟢 STABLE' if stats['is_stable'] else '🔴 UNSTABLE'}")
+    
+    print("\n2. UNSTABLE EDGE LAYER (Performance Degradation)")
+    print("-" * 80)
+    print("Simulating degrading edge performance: 450µs → 540µs\n")
+    
+    changing_times = [450e-6, 460e-6, 470e-6, 480e-6, 490e-6,
+                      500e-6, 510e-6, 520e-6, 530e-6, 540e-6]
+    
+    for i, time in enumerate(changing_times):
+        needs_retest = detector.add_edge_measurement(5, time)
+        status = "🔴 VARIANCE" if needs_retest else "✓"
+        print(f"  Measurement {i+1:2d}: {time*1e6:.0f}µs {status}")
+    
+    stats = detector.edge_histories[5].get_stats()
+    print(f"\n  Mean: {stats['mean']*1e6:.1f}µs")
+    print(f"  StDev: {stats['stdev']*1e6:.2f}µs")
+    print(f"  CV: {stats['cv']:.2%} (threshold: 15%)")
+    print(f"  Status: {'🟢 STABLE' if stats['is_stable'] else '🔴 UNSTABLE'}")
+    
+    print("\n3. CASCADE PROPAGATION")
+    print("-" * 80)
+    
+    layers_to_test = detector.get_layers_needing_retest()
+    variance_layers = detector.get_all_stats()['layers_with_variance']
+    
+    print(f"Layers with detected variance:")
+    print(f"  Device: {sorted(variance_layers['device'])}")
+    print(f"  Edge: {sorted(variance_layers['edge'])}")
+    
+    print(f"\nLayers needing re-test (includes cascaded):")
+    print(f"  Device: {layers_to_test['device']}")
+    print(f"  Edge: {layers_to_test['edge']}")
+    
+    print("\nCascade Logic:")
+    for layer_id in sorted(variance_layers['edge']):
+        print(f"  Layer {layer_id} has variance → Layer {layer_id+1} needs re-test")
+    
+    print("\n4. OFFLOADING ALGORITHM RE-EVALUATION")
+    print("-" * 80)
+    
+    should_retest = detector.should_retest_offloading()
+    print(f"Should re-evaluate offloading algorithm: {should_retest}")
+    
+    if should_retest:
+        print("\n⚠️  ACTION REQUIRED:")
+        print("  1. Variance detected in inference times")
+        print("  2. Current offloading decisions may be suboptimal")
+        print("  3. Consider forcing local inference to refresh measurements")
+        print("  4. Re-run offloading algorithm with updated times")
+    
+    print("\n" + "=" * 80)
+    print("DEMO COMPLETE")
+    print("=" * 80)
+    print("\nFor automated tests, run: pytest tests/test_variance_and_local_inference.py")
+
+
+if __name__ == "__main__":
+    main()
+
     """Demonstrate the variance detection system with example data"""
     
     print("=" * 80)

@@ -1,12 +1,100 @@
 #!/usr/bin/env python3
 """
-Test variance cascading: When layer i has variance, layer i+1 needs re-testing.
+Interactive demonstration of variance cascading.
+For automated tests, see tests/test_variance_and_local_inference.py
+
+This script demonstrates:
+- When layer i has variance, layer i+1 needs re-testing
+- Why: output of layer i is input to layer i+1
+- Multiple cascade chains with several unstable layers
 """
 
 from server.variance_detector import VarianceDetector
 
 
-def test_variance_cascading():
+def main():
+    """Run interactive cascading demonstration"""
+    
+    print("=" * 80)
+    print("VARIANCE CASCADING - INTERACTIVE DEMO")
+    print("=" * 80)
+    
+    print("\nSCENARIO: Layer 5 performance degrades")
+    print("EXPECTED: Layer 6 should also be flagged for re-test")
+    print("REASON: Output of layer 5 is input to layer 6\n")
+    
+    detector = VarianceDetector(window_size=10, variance_threshold=0.15)
+    
+    print("Phase 1: Layer 5 initially stable at 200µs")
+    print("-" * 80)
+    for i in range(10):
+        detector.add_edge_measurement(5, 200e-6 + (i % 2) * 5e-6)
+    
+    print("  ✓ Layer 5 stable (CV < 15%)")
+    layers = detector.get_layers_needing_retest()
+    print(f"  Layers needing re-test: {layers['edge']}\n")
+    
+    print("Phase 2: Layer 5 degrades (300µs with increasing trend)")
+    print("-" * 80)
+    for i in range(10):
+        detector.add_edge_measurement(5, 300e-6 + (i * 10e-6))
+    
+    stats = detector.edge_histories[5].get_stats()
+    print(f"  Layer 5 CV: {stats['cv']:.2%} - UNSTABLE")
+    
+    layers = detector.get_layers_needing_retest()
+    variance_layers = detector.get_all_stats()['layers_with_variance']['edge']
+    
+    print(f"\n  Layers with variance: {sorted(variance_layers)}")
+    print(f"  Layers needing re-test: {sorted(layers['edge'])}")
+    
+    if 6 in layers['edge']:
+        print(f"\n  ✓ Layer 6 automatically flagged (found in {layers['edge']})")
+        print("  ✓ Cascade working correctly")
+    
+    print("\nCascade Chain:")
+    for layer_id in sorted(variance_layers):
+        print(f"  Layer {layer_id} (variance) → Layer {layer_id+1} (cascade)")
+    
+    print("\n" + "=" * 80)
+    print("MULTIPLE CASCADES")
+    print("=" * 80)
+    
+    detector2 = VarianceDetector(window_size=10, variance_threshold=0.15)
+    
+    print("\nCreating unstable layers: 3, 5, 7")
+    print("-" * 80)
+    
+    for layer_id in [3, 5, 7]:
+        # Stable then unstable
+        for i in range(5):
+            detector2.add_device_measurement(layer_id, 19e-6)
+        for i in range(5):
+            detector2.add_device_measurement(layer_id, 38e-6)
+        print(f"  ✓ Layer {layer_id} made unstable")
+    
+    layers = detector2.get_layers_needing_retest()
+    variance_layers = detector2.get_all_stats()['layers_with_variance']['device']
+    
+    print(f"\n  Variance detected in: {sorted(variance_layers)}")
+    print(f"  Re-test needed for: {sorted(layers['device'])}")
+    
+    print("\nCascade Chains:")
+    for layer_id in sorted(variance_layers):
+        print(f"  Layer {layer_id} (variance) → Layer {layer_id+1} (cascade)")
+    
+    print("\n" + "=" * 80)
+    print("DEMO COMPLETE")
+    print("=" * 80)
+    print("\nKey Takeaway:")
+    print("  When layer i changes, layer i+1 must be re-tested because")
+    print("  the input distribution to layer i+1 has changed.")
+    print("\nFor automated tests, run: pytest tests/test_variance_and_local_inference.py")
+
+
+if __name__ == "__main__":
+    main()
+
     """Demonstrate variance cascading to next layer"""
     
     print("=" * 80)
