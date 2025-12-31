@@ -56,6 +56,8 @@ class ModelManager:
         self.model = None
         # dictionary to store inference times for each layer
         self.inference_times = inference_times
+        # cache for TFLite interpreters to avoid recreation overhead
+        self._interpreter_cache = {}
 
     def load_model(self, model_path: str = ModelManagerConfig.MODEL_PATH):
         """Load the model from the given path.
@@ -126,12 +128,28 @@ class ModelManager:
         """
         logger.debug(f"Making a prediction for layer [{layer_id - layer_offset}]")
 
-        # initialize interepreter with layer tflite model
-        interpreter = tf.lite.Interpreter(
-            model_path=f'{ModelFiles.model_save_path}/test/{ModelManagerConfig.MODEL_DIR_PATH}/layers/tflite/submodel_{layer_id - layer_offset}.tflite')
-        interpreter.allocate_tensors()
-        input_details = interpreter.get_input_details()
-        output_details = interpreter.get_output_details()
+        layer_key = layer_id - layer_offset
+        
+        # Check if interpreter is already cached
+        if layer_key not in self._interpreter_cache:
+            # Initialize interpreter with layer tflite model
+            interpreter = tf.lite.Interpreter(
+                model_path=f'{ModelFiles.model_save_path}/test/{ModelManagerConfig.MODEL_DIR_PATH}/layers/tflite/submodel_{layer_key}.tflite')
+            interpreter.allocate_tensors()
+            input_details = interpreter.get_input_details()
+            output_details = interpreter.get_output_details()
+            # Cache the interpreter and its details
+            self._interpreter_cache[layer_key] = {
+                'interpreter': interpreter,
+                'input_details': input_details,
+                'output_details': output_details
+            }
+        else:
+            # Retrieve cached interpreter
+            cached = self._interpreter_cache[layer_key]
+            interpreter = cached['interpreter']
+            input_details = cached['input_details']
+            output_details = cached['output_details']
 
         # set input tensor
         for i, input_detail in enumerate(input_details):

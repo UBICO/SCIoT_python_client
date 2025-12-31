@@ -106,7 +106,7 @@ class MqttClient:
                 logger.debug(f"Synchronized with NTP server. Offset: {offset} seconds")
                 return offset
             except ntplib.NTPException as _:
-                time.sleep(1)
+                continue
         threading.Timer(600, self.sync_with_ntp).start()
 
     def get_current_time(self) -> float:

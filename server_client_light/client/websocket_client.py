@@ -51,7 +51,7 @@ def sync_time(server: str) -> float:
             return resp.offset
         except Exception as e:
             print(f"[Client] NTP sync error: {e}, retrying...")
-            time.sleep(1)
+            continue
 
 # 2. UUID generation
 def generate_message_uuid() -> str:

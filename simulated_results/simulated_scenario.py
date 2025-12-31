@@ -50,11 +50,9 @@ def offloading_algo(edge_times, device_times, network_times):
 
 def compute_network_times(layers_size, network_speed, network_stability):
     network_times = []
-    delay = 0.002
     for layer in layers_size:
         layer_corrected_size = (layer * 4) / 1024
         network_time = layer_corrected_size / (network_speed*network_stability)
-        network_time += delay
         network_times.append(network_time)
     return network_times
 
