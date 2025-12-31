@@ -63,9 +63,7 @@ class Edge:
             prediction = model_manager.predict_single_layer(layer_index, start_layer_offset, prediction_data)
             predictions[layer] = prediction
 
-        # save the inference times to a file
-        model_manager.save_inference_times()
-
+        # Note: inference times are now saved automatically after each layer prediction
         return predictions[layers_to_use[num_of_layers - start_layer_index - 1]]
 
     @staticmethod
@@ -120,8 +118,7 @@ class Edge:
                 model_manager.get_layer_size_in_bytes(layer, prediction))
             predictions[layer] = prediction
 
-        # save the inference times to a file
-        model_manager.save_inference_times()
+        # Note: inference times are now saved automatically after each layer prediction
 
         # save the layer sizes to a file
         with open(OffloadingDataFiles.data_file_path_sizes, "w") as f:

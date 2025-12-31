@@ -1,0 +1,16 @@
+================================================================================
+SCIoT Performance Statistics Summary
+================================================================================
+
+Generated Files:
+--------------------------------------------------------------------------------
+  - device_inference_per_layer.csv
+  - device_inference_statistics.csv
+  - edge_inference_per_layer.csv
+  - edge_inference_statistics.csv
+  - layer_sizes_per_layer.csv
+  - layer_sizes_statistics.csv
+
+================================================================================
+Files are ready for analysis and visualization
+================================================================================

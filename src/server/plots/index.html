@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SCIoT Statistics Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .plot-container {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .plot-container h2 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>SCIoT Performance Statistics - Visualizations</h1>
+    <p style="text-align: center; color: #666;">Generated plots for inference times, data sizes, and offloading metrics</p>
+
+    <div class="plot-container">
+        <h2>Cumulative Inference Time Progression</h2>
+        <img src="cumulative_costs.png" alt="Cumulative Inference Time Progression">
+    </div>
+
+    <div class="plot-container">
+        <h2>Distribution Comparison (Boxplots)</h2>
+        <img src="inference_distribution.png" alt="Distribution Comparison (Boxplots)">
+    </div>
+
+    <div class="plot-container">
+        <h2>Device vs Edge Inference Times per Layer</h2>
+        <img src="inference_times_comparison.png" alt="Device vs Edge Inference Times per Layer">
+    </div>
+
+    <div class="plot-container">
+        <h2>Data Transmission Sizes per Layer</h2>
+        <img src="layer_sizes.png" alt="Data Transmission Sizes per Layer">
+    </div>
+
+    <div class="plot-container">
+        <h2>Summary Statistics Overview</h2>
+        <img src="statistics_summary.png" alt="Summary Statistics Overview">
+    </div>
+
+</body>
+</html>

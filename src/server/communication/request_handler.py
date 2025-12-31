@@ -33,8 +33,17 @@ class RequestHandler():
         message_data = RequestHandler._extend_message_data(message_data, received_timestamp, body)
         with open(OffloadingDataFiles.data_file_path_device, 'r') as f:
             device_inference_times = json.load(f)
+        
+        # Update device inference times with exponential moving average (alpha=0.2)
+        alpha = 0.2  # Weight for new measurement
         for l_id, inference_time in enumerate(message_data.device_layers_inference_time):
-            device_inference_times[f"layer_{l_id}"] = inference_time
+            layer_key = f"layer_{l_id}"
+            if layer_key in device_inference_times:
+                # Smooth the time with existing history
+                device_inference_times[layer_key] = alpha * inference_time + (1 - alpha) * device_inference_times[layer_key]
+            else:
+                device_inference_times[layer_key] = inference_time
+        
         with open(OffloadingDataFiles.data_file_path_device, 'w') as f:
             json.dump(device_inference_times, f, indent=4)
         # finish inference

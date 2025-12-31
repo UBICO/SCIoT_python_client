@@ -25,9 +25,20 @@ def track_inference_time(func):
         result = func(self, layer_id, layer_offset, *args, **kwargs)
         # Calculate the elapsed time
         elapsed_time = time.perf_counter() - start_time
-        # Store the elapsed time in the inference_times dictionary
-        self.inference_times[layer_id - layer_offset] = elapsed_time
-        logger.debug(f"Edge Inference for layer [{layer_id - layer_offset}] took {elapsed_time:.4f} seconds")
+        
+        layer_key = str(layer_id - layer_offset)
+        # Use exponential moving average to smooth times (alpha=0.2 gives 80% weight to history)
+        if layer_key in self.inference_times:
+            alpha = 0.2  # Weight for new measurement
+            self.inference_times[layer_key] = alpha * elapsed_time + (1 - alpha) * self.inference_times[layer_key]
+        else:
+            self.inference_times[layer_key] = elapsed_time
+        
+        logger.debug(f"Edge Inference for layer [{layer_id - layer_offset}] took {elapsed_time:.4f} seconds (smoothed: {self.inference_times[layer_key]:.4f}s)")
+        
+        # Save inference times in real-time after each layer
+        self.save_inference_times()
+        
         return result
 
     return wrapper
@@ -172,6 +183,8 @@ class ModelManager:
             self.save_path = save_path
         self.save_path = self.save_path[:-1] if self.save_path[-1] == "/" else self.save_path
         inference_times = self.inference_times
-        with open(OffloadingDataFiles.data_file_path_edge, "w") as f:
-            json.dump(inference_times, f, indent=4)
-        logger.debug(f"Inference times saved")
+        try:
+            with open(OffloadingDataFiles.data_file_path_edge, "w") as f:
+                json.dump(inference_times, f, indent=4)
+        except Exception as e:
+            logger.error(f"Failed to save inference times: {e}")
