@@ -55,8 +55,14 @@ def generate_message_id():
 def register_device():
     url = f"{SERVER}{ENDPOINTS['registration']}"
     payload = {"device_id": DEVICE_ID}
-    r = requests.post(url, json=payload)
-    print("Registration:", r.status_code, r.text)
+    try:
+        r = requests.post(url, json=payload, timeout=5)
+        print("Registration:", r.status_code, r.text)
+        return True
+    except requests.exceptions.RequestException as e:
+        print(f"⚠ Registration failed (server unreachable): {e}")
+        print("  → Continuing with local-only inference")
+        return False
 
 # ------------------------------------------------
 #  Convert image to RGB565 and send to server
@@ -72,21 +78,31 @@ def send_image():
             rgb = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
             rgb565.append(rgb)
     rgb565_bytes = struct.pack(f">{len(rgb565)}H", *rgb565)
-    r = requests.post(url, data=rgb565_bytes, headers={"Content-Type": "application/octet-stream"})
-    print("Image sent:", r.status_code)
+    try:
+        r = requests.post(url, data=rgb565_bytes, headers={"Content-Type": "application/octet-stream"}, timeout=5)
+        print("Image sent:", r.status_code)
+        return True
+    except requests.exceptions.RequestException as e:
+        print(f"⚠ Image send failed (server unreachable): {e}")
+        return False
 
 # ----------------------------
 #  Request Best Offloading Layer
 # ----------------------------
 def get_offloading_layer():
     url = f"{SERVER}{ENDPOINTS['offloading_layer']}"
-    r = requests.get(url)
-    if r.status_code == 200:
-        best_layer = r.json().get("offloading_layer_index", LAST_OFFLOADING_LAYER)
-        print("Best layer received:", best_layer)
-        return best_layer
-    else:
-        print("Error requesting layer:", r.status_code)
+    try:
+        r = requests.get(url, timeout=5)
+        if r.status_code == 200:
+            best_layer = r.json().get("offloading_layer_index", LAST_OFFLOADING_LAYER)
+            print("Best layer received:", best_layer)
+            return best_layer
+        else:
+            print("Error requesting layer:", r.status_code)
+            return LAST_OFFLOADING_LAYER
+    except requests.exceptions.RequestException as e:
+        print(f"⚠ Cannot reach server: {e}")
+        print("  → Running all layers locally")
         return LAST_OFFLOADING_LAYER
 
 # TEST: Simulate random best offloading layer change
@@ -167,23 +183,49 @@ def send_inference_result(output_data, inference_times, layer_index, message_id)
     buffer += struct.pack("i", len(inference_times) * 4)
     buffer += np.array(inference_times, dtype=np.float32).tobytes()
 
-    r = requests.post(url, data=buffer, headers={"Content-Type": "application/octet-stream"})
-    print("Output sent:", r.status_code)
+    try:
+        r = requests.post(url, data=buffer, headers={"Content-Type": "application/octet-stream"}, timeout=5)
+        print("Output sent:", r.status_code)
+        return True
+    except requests.exceptions.RequestException as e:
+        print(f"⚠ Cannot send result to server: {e}")
+        print("  → Local inference completed, result not synchronized")
+        return False
 
 # -----
 # MAIN
 # -----
 def main():
-    register_device()
+    print("="*60)
+    print("SCIoT Client Starting")
+    print(f"Server: {SERVER}")
+    print(f"Device ID: {DEVICE_ID}")
+    print("="*60)
+    
+    # Try to register, but continue even if it fails
+    server_available = register_device()
+    if not server_available:
+        print("\n⚠ Server not available - Running in LOCAL-ONLY mode")
+        print("  Client will continue and retry server connection on each request\n")
+    
     while True:
+        # Try to send image (optional, just for server tracking)
         send_image()
-        best_layer = get_offloading_layer() 
-        #best_layer = get_offloading_layer2()
+        
+        # Get offloading decision (fallback to local if server unreachable)
+        best_layer = get_offloading_layer()
+        
         time.sleep(1)  # Ensure server has processed the request
         message_id = generate_message_id()
         image = load_image_rgb(IMAGE_PATH)
+        
+        # Always run inference (local or split based on best_layer)
         output_data, inference_times = run_split_inference(image, TFLITE_DIR, best_layer)
+        
+        # Try to send results (for variance tracking and algorithm updates)
         send_inference_result(output_data, inference_times, best_layer, message_id)
+        
+        print(f"✓ Inference complete (layers 0-{best_layer})\n")
 
 main()
 
