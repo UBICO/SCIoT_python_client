@@ -1,37 +1,37 @@
 # SCIoT project
-*Copy of the SCIoT  project to work on the python clients*
+*Copy of the SCIoT project to work on the Python clients*
 
-Questa è una copia del progetto per testare l'implementazione dei client Python.
+This is a copy of the project to test the Python client implementation.
 
 ## 05/11/2025
 
 ### Updates:
-- Commentate le configurazione MQTT e WebSocket dal file settings.yaml in modo da eseguire solo la versione http. Non è quindi necessario fare il punto 2 della guida a come lanciare (premere `CTRL + C`) all'avvio. 
-- Aggiunta la cartella 'simulated_results' contenente lo script 'simulated_scenario.py' utilizzato per creare i file .csv dei risultati simulati.
-- il best offloading layer viene scelto correttamente, non più in modo randomico. 
+- Commented out the MQTT and WebSocket configurations from the settings.yaml file to only run the HTTP version. Therefore, it is no longer necessary to follow step 2 of the launch guide (pressing `CTRL + C`) at startup.
+- Added the 'simulated_results' folder containing the 'simulated_scenario.py' script used to create the .csv files of simulated results.
+- The best offloading layer is now chosen correctly, no longer randomly.
 
-### Punti da risolvere:
-- Quando viene fatto l'offloading su certi layer va in errore. Credo che il problema sia dovuto al fatto che per alcuni layer l'edge si aspetta di ricevere un numero di pesi differente. 
+### Issues to resolve:
+- When offloading to certain layers, an error occurs. I believe the problem is due to the fact that for some layers the edge expects to receive a different number of weights.
 
-### Altre indicazioni: 
-- Per intervenire su la latency: message_data.py → get_latency()
-- Per intervenire su edge inference time: models/model_manager.py → wrapper()
+### Other notes:
+- To modify latency: message_data.py → get_latency()
+- To modify edge inference time: models/model_manager.py → wrapper()
 
 
 
 ## 13/07/2025
 
-Creato lo script `server_client_light/client/http_client.py` (clone del codice per ESP32)
+Created the script `server_client_light/client/http_client.py` (clone of the ESP32 code)
 
-### Punti da risolvere
-- Attualmente il best offloading layer viene scelto in modo random per simulare condizioni in cui le performance della rete degradano → **capire come fare.**
-- Inserire codice su server per **salvare su file i tempi di inferenza**
+### Issues to resolve
+- Currently, the best offloading layer is chosen randomly to simulate conditions where network performance degrades → **need to figure out how to do this.**
+- Insert code on server to **save inference times to file**
 
-### Come lanciare
+### How to launch
 
-1. Seguire le istruzioni scritte da Mattia per l'avvio del server (eventualmente inserire `tensorflow` per macOS nel file `config`)
-2. All'avvio di `run_edge.py`, premere `CTRL + C` per terminare la modalità websocket e far partire la modalità HTTP
-3. Avviare il client:
+1. Follow the instructions written by Mattia for starting the server (optionally insert `tensorflow` for macOS in the `config` file)
+2. At the startup of `run_edge.py`, press `CTRL + C` to terminate WebSocket mode and start HTTP mode
+3. Start the client:
 
    ```sh
    python server_client_light/client/http_client.py
