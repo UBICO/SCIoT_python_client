@@ -8,6 +8,7 @@ from server.commons import OffloadingDataFiles
 from server.commons import ModelFiles
 from server.logger.log import logger
 from server.models.model_manager_config import ModelManagerConfig
+from server.delay_simulator import DelaySimulator
 
 
 def track_inference_time(func):
@@ -60,7 +61,7 @@ class ModelManager:
     """
 
     def __init__(self, save_path: str = ModelManagerConfig.SAVE_PATH, model_path: str = ModelManagerConfig.MODEL_PATH,
-                 inference_times: dict = {}):
+                 inference_times: dict = {}, computation_delay_config: dict = None):
         self.save_path = save_path
         self.model_path = model_path
         self.num_layers = None
@@ -69,6 +70,10 @@ class ModelManager:
         self.inference_times = inference_times
         # cache for TFLite interpreters to avoid recreation overhead
         self._interpreter_cache = {}
+        # delay simulator for computation
+        self.computation_delay = DelaySimulator(computation_delay_config)
+        if self.computation_delay.enabled:
+            logger.info(f"Computation delay simulation enabled: {self.computation_delay.get_delay_info()}")
 
     def load_model(self, model_path: str = ModelManagerConfig.MODEL_PATH):
         """Load the model from the given path.
@@ -140,6 +145,11 @@ class ModelManager:
         logger.debug(f"Making a prediction for layer [{layer_id - layer_offset}]")
 
         layer_key = layer_id - layer_offset
+        
+        # Apply artificial computation delay if configured
+        if self.computation_delay.enabled:
+            delay = self.computation_delay.apply_delay()
+            logger.debug(f"Applied artificial computation delay: {delay*1000:.2f}ms")
         
         # Check if interpreter is already cached
         if layer_key not in self._interpreter_cache:

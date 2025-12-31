@@ -1,4 +1,6 @@
 import json
+import yaml
+from pathlib import Path
 import numpy as np
 from PIL import Image
 
@@ -14,15 +16,44 @@ from server.logger.log import logger
 from server.communication.message_data import MessageData
 
 from server.models.model_input_converter import ModelInputConverter
+from server.delay_simulator import DelaySimulator
 
 import struct
 
 
+def load_network_delay_config():
+    """Load network delay configuration from settings.yaml"""
+    settings_path = Path(__file__).parent.parent / "settings.yaml"
+    try:
+        with open(settings_path, 'r') as f:
+            settings = yaml.safe_load(f)
+            return settings.get('delay_simulation', {}).get('network')
+    except Exception as e:
+        logger.warning(f"Could not load network delay config: {e}")
+        return None
+
+
 class RequestHandler():
+    def __init__(self):
+        # Load network delay configuration
+        network_delay_config = load_network_delay_config()
+        self.network_delay = DelaySimulator(network_delay_config)
+        if self.network_delay.enabled:
+            logger.info(f"Network delay simulation enabled: {self.network_delay.get_delay_info()}")
+    
     def handle_registration(self, device_id):
+        # Apply network delay before responding
+        if self.network_delay.enabled:
+            delay = self.network_delay.apply_delay()
+            logger.debug(f"Applied network delay: {delay*1000:.2f}ms")
         return device_id
 
     def handle_device_input(self, rgb565_image, height, width):
+        # Apply network delay after receiving input
+        if self.network_delay.enabled:
+            delay = self.network_delay.apply_delay()
+            logger.debug(f"Applied network delay: {delay*1000:.2f}ms")
+        
         image_array = ModelInputConverter.convert_rgb565_to_nparray(rgb565_image, height, width)
         image = Image.fromarray(image_array, 'RGB')
         image.save(InputDataFiles.input_data_file_path)
@@ -50,6 +81,12 @@ class RequestHandler():
         prediction = Edge.run_inference(message_data.offloading_layer_index, np.array(message_data.layer_output, dtype=np.float32))
         logger.debug(f"Prediction: {prediction.tolist()}")
         MessageData.save_to_file(EvaluationFiles.evaluation_file_path, message_data.to_dict())
+        
+        # Apply network delay before responding
+        if self.network_delay.enabled:
+            delay = self.network_delay.apply_delay()
+            logger.debug(f"Applied network delay before response: {delay*1000:.2f}ms")
+        
         # run offloading algorithm
         device_inference_times, edge_inference_times, layers_sizes = RequestHandler._load_stats()
         logger.debug(f"Loaded stats data")

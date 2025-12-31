@@ -8,6 +8,7 @@ import random
 import os
 import yaml
 from pathlib import Path
+from delay_simulator import DelaySimulator
 
 # Get the directory where this script is located
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -33,6 +34,16 @@ TFLITE_DIR = SCRIPT_DIR / MODEL_CONFIG["tflite_subdir"]
 SUBMODEL_PREFIX = MODEL_CONFIG["submodel_prefix"]
 
 ENDPOINTS = config["http"]["endpoints"]
+
+# Initialize delay simulators
+DELAY_CONFIG = config.get("delay_simulation", {})
+computation_delay = DelaySimulator(DELAY_CONFIG.get("computation"))
+network_delay = DelaySimulator(DELAY_CONFIG.get("network"))
+
+if computation_delay.enabled:
+    print(f"Computation delay enabled: {computation_delay.get_delay_info()}")
+if network_delay.enabled:
+    print(f"Network delay enabled: {network_delay.get_delay_info()}")
 
 # Function to generate a random message ID
 def generate_message_id():
@@ -115,6 +126,12 @@ def run_split_inference(image, tflite_dir, stop_layer):
         interpreter.set_tensor(input_details[0]['index'], input_data)
 
         t0 = time.time()
+        
+        # Apply artificial computation delay
+        if computation_delay.enabled:
+            delay = computation_delay.apply_delay()
+            print(f"  Layer {i} computation delay: {delay*1000:.2f}ms")
+        
         interpreter.invoke()
         t1 = time.time()
         inference_times.append(t1 - t0)
@@ -126,6 +143,11 @@ def run_split_inference(image, tflite_dir, stop_layer):
     return input_data, inference_times
 
 def send_inference_result(output_data, inference_times, layer_index, message_id):
+    # Apply network delay before sending
+    if network_delay.enabled:
+        delay = network_delay.apply_delay()
+        print(f"  Applied network delay: {delay*1000:.2f}ms")
+    
     url = f"{SERVER}{ENDPOINTS['device_inference_result']}"
     timestamp = time.time()
 

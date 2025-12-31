@@ -36,3 +36,31 @@ model:
     input_height: 96
     input_width: 96
     last_offloading_layer: 58
+
+# Artificial Delay Simulation (for testing/evaluation)
+delay_simulation:
+  # Computation delay (simulates slower edge server)
+  computation:
+    enabled: false
+    type: "none"  # Options: none, static, gaussian, uniform, exponential
+    # For static:
+    value: 0.001  # seconds (e.g., 0.001 = 1ms)
+    # For gaussian:
+    mean: 0.001   # seconds
+    std_dev: 0.0002  # seconds
+    # For uniform:
+    min: 0.0005   # seconds
+    max: 0.002    # seconds
+  
+  # Network delay (simulates slower network on server side)
+  network:
+    enabled: false
+    type: "none"  # Options: none, static, gaussian, uniform, exponential
+    # For static:
+    value: 0.010  # seconds (e.g., 0.010 = 10ms)
+    # For gaussian:
+    mean: 0.010   # seconds
+    std_dev: 0.002  # seconds
+    # For uniform:
+    min: 0.005    # seconds
+    max: 0.015    # seconds

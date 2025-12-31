@@ -1,4 +1,5 @@
 import json
+import yaml
 
 import numpy as np
 import tensorflow as tf
@@ -7,6 +8,19 @@ from server.commons import OffloadingDataFiles
 from server.commons import InputDataFiles
 from server.models.model_manager import ModelManager
 from server.models.model_input_converter import ModelInputConverter
+from pathlib import Path
+
+
+def load_delay_config():
+    """Load delay configuration from settings.yaml"""
+    settings_path = Path(__file__).parent.parent / "settings.yaml"
+    try:
+        with open(settings_path, 'r') as f:
+            settings = yaml.safe_load(f)
+            return settings.get('delay_simulation', {}).get('computation')
+    except Exception as e:
+        print(f"Warning: Could not load delay config: {e}")
+        return None
 
 
 class Edge:
@@ -20,8 +34,12 @@ class Edge:
         with open(OffloadingDataFiles.data_file_path_edge, 'r') as file:
             edge_inference_times = json.load(file)
 
+        # load delay configuration
+        delay_config = load_delay_config()
+
         # load the model and make predictions
-        model_manager = ModelManager(inference_times=edge_inference_times)
+        model_manager = ModelManager(inference_times=edge_inference_times, 
+                                     computation_delay_config=delay_config)
         model_manager.load_model()
 
         # set the layers to use
@@ -76,8 +94,11 @@ class Edge:
         print(image_array.shape)
         print(image_array.dtype)
 
+        # load delay configuration
+        delay_config = load_delay_config()
+
         # load the model and make predictions
-        model_manager = ModelManager()
+        model_manager = ModelManager(computation_delay_config=delay_config)
         model_manager.load_model()
 
         # set the layers to use
@@ -128,4 +149,4 @@ class Edge:
 
 
 if __name__ == "__main__":
-    Edge.initialization()
+    Edge.initialization(input_height=96, input_width=96)
