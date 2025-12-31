@@ -52,7 +52,7 @@ class StatisticsVisualizer:
             return None
 
     def plot_inference_times_comparison(self):
-        """Plot device vs edge inference times side by side"""
+        """Plot device vs edge inference times side by side with synchronized Y axis"""
         device_df = self.load_csv_data('device_inference_per_layer.csv')
         edge_df = self.load_csv_data('edge_inference_per_layer.csv')
         
@@ -62,18 +62,25 @@ class StatisticsVisualizer:
         
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
         
+        # Get max value to synchronize Y axes
+        device_values = device_df['Value'].values
+        edge_values = edge_df['Value'].values
+        y_max = max(device_values.max(), edge_values.max()) * 1.1  # Add 10% margin
+        
         # Device inference times
-        ax1.bar(range(len(device_df)), device_df['Value'].values, color=self.colors['device'], alpha=0.8)
+        ax1.bar(range(len(device_df)), device_values, color=self.colors['device'], alpha=0.8)
         ax1.set_xlabel('Layer', fontsize=11, fontweight='bold')
         ax1.set_ylabel('Time (seconds)', fontsize=11, fontweight='bold')
         ax1.set_title('Device Inference Times per Layer', fontsize=12, fontweight='bold')
+        ax1.set_ylim([0, y_max])  # Synchronized Y axis
         ax1.grid(True, alpha=0.3)
         
         # Edge inference times
-        ax2.bar(range(len(edge_df)), edge_df['Value'].values, color=self.colors['edge'], alpha=0.8)
+        ax2.bar(range(len(edge_df)), edge_values, color=self.colors['edge'], alpha=0.8)
         ax2.set_xlabel('Layer', fontsize=11, fontweight='bold')
         ax2.set_ylabel('Time (seconds)', fontsize=11, fontweight='bold')
         ax2.set_title('Edge Inference Times per Layer', fontsize=12, fontweight='bold')
+        ax2.set_ylim([0, y_max])  # Synchronized Y axis
         ax2.grid(True, alpha=0.3)
         
         plt.tight_layout()

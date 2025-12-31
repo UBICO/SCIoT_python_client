@@ -1,5 +1,6 @@
 import json
 import yaml
+import random
 from pathlib import Path
 import numpy as np
 from PIL import Image
@@ -17,6 +18,7 @@ from server.communication.message_data import MessageData
 
 from server.models.model_input_converter import ModelInputConverter
 from server.delay_simulator import DelaySimulator
+from server.variance_detector import VarianceDetector
 
 import struct
 
@@ -33,13 +35,54 @@ def load_network_delay_config():
         return None
 
 
+def load_local_inference_config():
+    """Load local inference mode configuration from settings.yaml"""
+    settings_path = Path(__file__).parent.parent / "settings.yaml"
+    try:
+        with open(settings_path, 'r') as f:
+            settings = yaml.safe_load(f)
+            return settings.get('local_inference_mode', {})
+    except Exception as e:
+        logger.warning(f"Could not load local inference config: {e}")
+        return {'enabled': False, 'probability': 0.0}
+
+
 class RequestHandler():
+    # Class-level variance detector (shared across all requests)
+    variance_detector = VarianceDetector(window_size=10, variance_threshold=0.15)
+    
     def __init__(self):
         # Load network delay configuration
         network_delay_config = load_network_delay_config()
         self.network_delay = DelaySimulator(network_delay_config)
         if self.network_delay.enabled:
             logger.info(f"Network delay simulation enabled: {self.network_delay.get_delay_info()}")
+        
+        # Load local inference mode configuration
+        local_config = load_local_inference_config()
+        self.local_inference_enabled = local_config.get('enabled', False)
+        self.local_inference_probability = local_config.get('probability', 0.0)
+        if self.local_inference_enabled:
+            logger.info(f"Local inference mode enabled with probability {self.local_inference_probability:.0%}")
+    
+    def should_force_local_inference(self) -> bool:
+        """
+        Determine if this request should force local-only inference (no offloading).
+        Used to refresh/retest device inference times periodically.
+        
+        Returns:
+            True if local inference should be forced, False otherwise
+        """
+        if not self.local_inference_enabled:
+            return False
+        
+        # Randomly decide based on probability
+        should_force = random.random() < self.local_inference_probability
+        
+        if should_force:
+            logger.info("Forcing local-only inference to refresh device times")
+        
+        return should_force
     
     def handle_registration(self, device_id):
         # Apply network delay before responding
@@ -74,11 +117,23 @@ class RequestHandler():
                 device_inference_times[layer_key] = alpha * inference_time + (1 - alpha) * device_inference_times[layer_key]
             else:
                 device_inference_times[layer_key] = inference_time
+            
+            # Track variance for this layer
+            RequestHandler.variance_detector.add_device_measurement(l_id, inference_time)
         
         with open(OffloadingDataFiles.data_file_path_device, 'w') as f:
             json.dump(device_inference_times, f, indent=4)
-        # finish inference
-        prediction = Edge.run_inference(message_data.offloading_layer_index, np.array(message_data.layer_output, dtype=np.float32))
+        
+        # Finish inference on edge (only if device didn't complete all layers)
+        # When offloading_layer_index is -1 or LAST_LAYER, all inference was done on device
+        if message_data.offloading_layer_index == -1 or message_data.offloading_layer_index >= 58:
+            # All layers completed on device, no edge inference needed
+            prediction = np.array(message_data.layer_output, dtype=np.float32)
+            logger.debug(f"All layers completed on device (layer_index={message_data.offloading_layer_index})")
+        else:
+            # Continue inference on edge from where device stopped
+            prediction = Edge.run_inference(message_data.offloading_layer_index, np.array(message_data.layer_output, dtype=np.float32))
+        
         logger.debug(f"Prediction: {prediction.tolist()}")
         MessageData.save_to_file(EvaluationFiles.evaluation_file_path, message_data.to_dict())
         
@@ -90,14 +145,27 @@ class RequestHandler():
         # run offloading algorithm
         device_inference_times, edge_inference_times, layers_sizes = RequestHandler._load_stats()
         logger.debug(f"Loaded stats data")
-        offloading_algo = OffloadingAlgo(
-            avg_speed=message_data.avg_speed,
-            num_layers=len(layers_sizes),
-            layers_sizes=list(layers_sizes),
-            inference_time_device=list(device_inference_times),
-            inference_time_edge=list(edge_inference_times)
-        )
-        return offloading_algo.static_offloading()
+        
+        # Check if variance detected - potentially need to re-test offloading
+        if RequestHandler.variance_detector.should_retest_offloading():
+            logger.warning("Offloading algorithm may need re-evaluation due to inference time variance")
+        
+        # Check if we should force local-only inference for refreshing times
+        if self.should_force_local_inference():
+            # Force all layers on device (offloading layer = -1 means no offloading)
+            best_offloading_layer = -1
+            logger.info("Forcing all layers on device for time refresh (local inference mode)")
+        else:
+            offloading_algo = OffloadingAlgo(
+                avg_speed=message_data.avg_speed,
+                num_layers=len(layers_sizes),
+                layers_sizes=list(layers_sizes),
+                inference_time_device=list(device_inference_times),
+                inference_time_edge=list(edge_inference_times)
+            )
+            best_offloading_layer = offloading_algo.static_offloading()
+        
+        return best_offloading_layer
     
     def handle_offloading_layer(self, best_offloading_layer):
         return best_offloading_layer

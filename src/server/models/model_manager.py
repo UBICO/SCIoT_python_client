@@ -9,6 +9,7 @@ from server.commons import ModelFiles
 from server.logger.log import logger
 from server.models.model_manager_config import ModelManagerConfig
 from server.delay_simulator import DelaySimulator
+from server.variance_detector import VarianceDetector
 
 
 def track_inference_time(func):
@@ -37,6 +38,10 @@ def track_inference_time(func):
         
         logger.debug(f"Edge Inference for layer [{layer_id - layer_offset}] took {elapsed_time:.4f} seconds (smoothed: {self.inference_times[layer_key]:.4f}s)")
         
+        # Track variance for edge inference times
+        if hasattr(self, 'variance_detector') and self.variance_detector:
+            self.variance_detector.add_edge_measurement(int(layer_key), elapsed_time)
+        
         # Save inference times in real-time after each layer
         self.save_inference_times()
         
@@ -61,7 +66,7 @@ class ModelManager:
     """
 
     def __init__(self, save_path: str = ModelManagerConfig.SAVE_PATH, model_path: str = ModelManagerConfig.MODEL_PATH,
-                 inference_times: dict = {}, computation_delay_config: dict = None):
+                 inference_times: dict = {}, computation_delay_config: dict = None, variance_detector: VarianceDetector = None):
         self.save_path = save_path
         self.model_path = model_path
         self.num_layers = None
@@ -74,6 +79,8 @@ class ModelManager:
         self.computation_delay = DelaySimulator(computation_delay_config)
         if self.computation_delay.enabled:
             logger.info(f"Computation delay simulation enabled: {self.computation_delay.get_delay_info()}")
+        # variance detector for tracking inference time stability
+        self.variance_detector = variance_detector
 
     def load_model(self, model_path: str = ModelManagerConfig.MODEL_PATH):
         """Load the model from the given path.

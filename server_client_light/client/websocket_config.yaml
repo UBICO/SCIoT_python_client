@@ -43,3 +43,10 @@ delay_simulation:
     # For uniform:
     min: 0.010    # seconds
     max: 0.030    # seconds
+# Local Inference Mode (force device to run all layers locally for time refresh)
+local_inference_mode:
+  enabled: false
+  # Probability of forcing local inference on each request (0.0 - 1.0)
+  # 0.0 = never force local, 1.0 = always force local
+  # 0.1 = ~10% of requests run locally (useful for periodic re-testing)
+  probability: 0.1

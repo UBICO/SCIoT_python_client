@@ -1,8 +1,11 @@
 from fastapi import FastAPI, HTTPException, Request
 from server.communication.request_handler import RequestHandler
+from server.logger.log import logger
 import ntplib
 import threading
 import time
+import traceback
+import sys
 
 class HttpServer:
     def __init__(
@@ -61,7 +64,8 @@ class HttpServer:
                 self.devices.add(cleaned_device_id)
                 return {'message': 'Success', 'device': cleaned_device_id}
             except Exception as e:
-                raise HTTPException(status_code=404, detail=str(e))
+                print(f"ERROR in registration endpoint: {type(e).__name__}: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post(self.endpoints['device_input'])
         async def device_input(request: Request):
@@ -70,7 +74,8 @@ class HttpServer:
                 self.request_handler.handle_device_input(body, self.input_height, self.input_width)
                 return {'message': 'Success'}
             except Exception as e:
-                raise HTTPException(status_code=404, detail=str(e))
+                print(f"ERROR in device_input endpoint: {type(e).__name__}: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.post(self.endpoints['device_inference_result'])
         async def device_inference_result(request: Request):
@@ -80,7 +85,11 @@ class HttpServer:
                 self.best_offloading_layer = self.request_handler.handle_device_inference_result(body=body, received_timestamp=received_timestamp)
                 return {'message': 'Success'}
             except Exception as e:
-                raise HTTPException(status_code=404, detail=str(e))
+                error_msg = f"ERROR in device_inference_result endpoint: {type(e).__name__}: {e}"
+                logger.error(error_msg)
+                print(error_msg, file=sys.stderr, flush=True)
+                traceback.print_exc(file=sys.stderr)
+                raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.get(self.endpoints['offloading_layer'])
         async def offloading_layer():
@@ -88,7 +97,8 @@ class HttpServer:
                 cleaned_offloading_layer_index = self.request_handler.handle_offloading_layer(best_offloading_layer=self.best_offloading_layer)
                 return {'offloading_layer_index': cleaned_offloading_layer_index}
             except Exception as e:
-                raise HTTPException(status_code=404, detail=str(e))
+                print(f"ERROR in offloading_layer endpoint: {type(e).__name__}: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
 
     def run(self):
         import uvicorn

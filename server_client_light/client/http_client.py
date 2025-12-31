@@ -115,6 +115,12 @@ def load_image_rgb(path):
 def run_split_inference(image, tflite_dir, stop_layer):
     input_data = image
     inference_times = []
+    
+    # Handle -1 as "run all layers until the end"
+    if stop_layer == -1:
+        stop_layer = LAST_OFFLOADING_LAYER
+        print(f"Offloading layer -1: Running all {stop_layer + 1} layers locally")
+    
     for i in range(stop_layer + 1):
         model_path = str(tflite_dir / f"{SUBMODEL_PREFIX}_{i}.tflite")
         interpreter = tf.lite.Interpreter(model_path=model_path)

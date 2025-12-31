@@ -8,6 +8,7 @@ from server.commons import OffloadingDataFiles
 from server.commons import InputDataFiles
 from server.models.model_manager import ModelManager
 from server.models.model_input_converter import ModelInputConverter
+from server.variance_detector import VarianceDetector
 from pathlib import Path
 
 
@@ -24,6 +25,9 @@ def load_delay_config():
 
 
 class Edge:
+    # Class-level variance detector (shared across edge inference calls)
+    variance_detector = VarianceDetector(window_size=10, variance_threshold=0.15)
+    
     @staticmethod
     def run_inference(offloading_layer_index: int, offloading_layer_output: np.array):
         # check the shape and dtype
@@ -39,7 +43,8 @@ class Edge:
 
         # load the model and make predictions
         model_manager = ModelManager(inference_times=edge_inference_times, 
-                                     computation_delay_config=delay_config)
+                                     computation_delay_config=delay_config,
+                                     variance_detector=Edge.variance_detector)
         model_manager.load_model()
 
         # set the layers to use
@@ -98,7 +103,8 @@ class Edge:
         delay_config = load_delay_config()
 
         # load the model and make predictions
-        model_manager = ModelManager(computation_delay_config=delay_config)
+        model_manager = ModelManager(computation_delay_config=delay_config,
+                                     variance_detector=Edge.variance_detector)
         model_manager.load_model()
 
         # set the layers to use

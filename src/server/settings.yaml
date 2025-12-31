@@ -1,66 +1,55 @@
 communication:
-  mode:
-#  - "websocket"
-  - "http"
-#   - "mqtt"
-  websocket:
-    host: "0.0.0.0"
-    port: 8080
-    endpoint: "/ws"
-    ntp_server: "0.it.pool.ntp.org"
-    model: "fomo_96x96"
   http:
-    host: "0.0.0.0"
-    port: 8000
     endpoints:
-      registration: "/api/registration" # post
-      device_input: "/api/device_input" # post
-      device_inference_result: "/api/device_inference_result" # post
-      offloading_layer: "/api/offloading_layer" # get
-    ntp_server: "0.it.pool.ntp.org"
-    model: "fomo_96x96"
+      device_inference_result: /api/device_inference_result
+      device_input: /api/device_input
+      offloading_layer: /api/offloading_layer
+      registration: /api/registration
+    host: 0.0.0.0
+    model: fomo_96x96
+    ntp_server: 0.it.pool.ntp.org
+    port: 8000
+  mode:
+  - http
   mqtt:
-    broker_url: "hostname.local"
     broker_port: 1883
-    client_id: "edge"
+    broker_url: hostname.local
+    client_id: edge
+    model: fomo_96x96
+    ntp_server: 0.it.pool.ntp.org
     topics:
-      registration: "devices/"
-      offloading_layer: "device_01/offloading_layer"
-      device_input: "device_01/input_data"
-      device_inference_result: "device_01/model_inference_result"
-    ntp_server: "0.it.pool.ntp.org"
-    model: "fomo_96x96"
-
+      device_inference_result: device_01/model_inference_result
+      device_input: device_01/input_data
+      offloading_layer: device_01/offloading_layer
+      registration: devices/
+  websocket:
+    endpoint: /ws
+    host: 0.0.0.0
+    model: fomo_96x96
+    ntp_server: 0.it.pool.ntp.org
+    port: 8080
+delay_simulation:
+  computation:
+    enabled: false
+    max: 0.002
+    mean: 0.001
+    min: 0.0005
+    std_dev: 0.0002
+    type: none
+    value: 0.001
+  network:
+    enabled: false
+    max: 0.015
+    mean: 0.01
+    min: 0.005
+    std_dev: 0.002
+    type: none
+    value: 0.01
+local_inference_mode:
+  enabled: true
+  probability: 0.01
 model:
   fomo_96x96:
     input_height: 96
     input_width: 96
     last_offloading_layer: 58
-
-# Artificial Delay Simulation (for testing/evaluation)
-delay_simulation:
-  # Computation delay (simulates slower edge server)
-  computation:
-    enabled: false
-    type: "none"  # Options: none, static, gaussian, uniform, exponential
-    # For static:
-    value: 0.001  # seconds (e.g., 0.001 = 1ms)
-    # For gaussian:
-    mean: 0.001   # seconds
-    std_dev: 0.0002  # seconds
-    # For uniform:
-    min: 0.0005   # seconds
-    max: 0.002    # seconds
-  
-  # Network delay (simulates slower network on server side)
-  network:
-    enabled: false
-    type: "none"  # Options: none, static, gaussian, uniform, exponential
-    # For static:
-    value: 0.010  # seconds (e.g., 0.010 = 10ms)
-    # For gaussian:
-    mean: 0.010   # seconds
-    std_dev: 0.002  # seconds
-    # For uniform:
-    min: 0.005    # seconds
-    max: 0.015    # seconds
