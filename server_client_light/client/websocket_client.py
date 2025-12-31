@@ -13,12 +13,16 @@ import ntplib
 import websockets
 from PIL import Image
 import numpy as np
+from pathlib import Path
+
+# Get the directory where this script is located
+SCRIPT_DIR = Path(__file__).resolve().parent
 
 # --- Configuration ---
 NTP_SERVER = "pool.ntp.org"
 WS_URI = "ws://localhost:8080/ws"
 DEVICE_ID = "device_01"
-IMAGE_PATH = "dog.png"
+IMAGE_PATH = SCRIPT_DIR / "dog.png"
 
 # Globals
 offset = 0.0
@@ -47,7 +51,7 @@ def generate_message_uuid() -> str:
 #    Converts PNG to RGB, then to RGB565 little endian
 
 def convert_to_rgb565_raw(path: str) -> bytes:
-    img = Image.open(path).convert("RGB")
+    img = Image.open(str(path)).convert("RGB")
     w, h = img.size
     rgb = np.asarray(img)
     raw = bytearray()

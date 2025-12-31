@@ -6,10 +6,16 @@ import requests
 import time
 import random
 import os
+from pathlib import Path
+
+# Get the directory where this script is located
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent.parent.parent
 
 SERVER = "http://0.0.0.0:8000"
 DEVICE_ID = "device_01"
-TFLITE_DIR = "./tflite"
+TFLITE_DIR = SCRIPT_DIR / "tflite"
+IMAGE_PATH = SCRIPT_DIR / "img.png"
 
 # Funzione per generare un message ID randomico
 def generate_message_id():
@@ -29,7 +35,7 @@ def register_device():
 # ----------------------------------------------
 def send_image():
     url = f"{SERVER}/api/device_input"
-    img = Image.open("img.png").resize((96, 96)).convert("RGB")
+    img = Image.open(str(IMAGE_PATH)).resize((96, 96)).convert("RGB")
     data = np.array(img)
     rgb565 = []
     for y in range(96):
@@ -73,7 +79,7 @@ def get_offloading_layer_random():
 # Send output 
 # ---------------------
 def load_image_rgb(path):
-    img = Image.open(path).resize((96, 96)).convert("RGB")
+    img = Image.open(str(path)).resize((96, 96)).convert("RGB")
     img_np = np.asarray(img).astype(np.float32) / 255.0
     img_np = np.expand_dims(img_np, axis=0)  # [1,96,96,3]
     return img_np
@@ -82,7 +88,7 @@ def run_split_inference(image, tflite_dir, stop_layer):
     input_data = image
     inference_times = []
     for i in range(stop_layer + 1):
-        model_path = os.path.join(tflite_dir, f"submodel_{i}.tflite")
+        model_path = str(tflite_dir / f"submodel_{i}.tflite")
         interpreter = tf.lite.Interpreter(model_path=model_path)
         interpreter.allocate_tensors()
         input_details = interpreter.get_input_details()
@@ -130,7 +136,7 @@ def main():
         #best_layer = get_offloading_layer2()
         time.sleep(1)  # garantiamo che il server abbia elaborato
         message_id = generate_message_id()
-        image = load_image_rgb("img.png")
+        image = load_image_rgb(IMAGE_PATH)
         output_data, inference_times = run_split_inference(image, TFLITE_DIR, best_layer)
         send_inference_result(output_data, inference_times, best_layer, message_id)
 
