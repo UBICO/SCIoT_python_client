@@ -16,6 +16,11 @@ uvicorn
 streamlit
 streamlit_autorefresh
 websockets
+
+[:sys_platform != "darwin" or platform_machine != "arm64"]
+tensorflow==2.15.0
+
+[:sys_platform == "darwin" and platform_machine == "arm64"]
 tensorflow-macos==2.15.0
 
 [test]
